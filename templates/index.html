@@ -1,0 +1,1773 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlotFlow — Slot Management & Approval System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0F1B3D;
+    --navy-mid: #1A2E5A;
+    --navy-light: #243A6E;
+    --accent: #4F7FFF;
+    --accent-bright: #5B8DFF;
+    --green: #16A34A;
+    --green-soft: #DCFCE7;
+    --amber: #D97706;
+    --amber-soft: #FEF3C7;
+    --red: #DC2626;
+    --red-soft: #FEE2E2;
+    --blue-soft: #EFF6FF;
+    --sidebar-w: 220px;
+    --topbar-h: 60px;
+    --surface: #F8FAFF;
+    --border: #E2E8F4;
+    --text: #0F1B3D;
+    --muted: #64748B;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--text); min-height: 100vh; }
+
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  #screen-login {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 60%, #1E3A8A 100%);
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #screen-login::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: rgba(79,127,255,.08);
+    top: -150px; right: -150px;
+  }
+  #screen-login::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(79,127,255,.06);
+    bottom: -100px; left: -100px;
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 48px 44px;
+    width: 420px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.25);
+    position: relative; z-index: 1;
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .login-logo-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #fff;
+  }
+  .login-logo-text { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); }
+  .login-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+  .login-heading { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 24px; color: var(--navy); margin-bottom: 4px; }
+  .login-desc { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 6px; display: block; letter-spacing: .3px; }
+  .form-input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; color: var(--text);
+    font-family: 'Inter', sans-serif; outline: none; transition: border .2s;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,127,255,.12); }
+  .form-input::placeholder { color: #B0BAD1; }
+  .forgot { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; float: right; margin-top: -14px; margin-bottom: 22px; display: block; cursor: pointer; }
+  .btn-primary {
+    width: 100%; padding: 13px; border: none; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #3B63D4);
+    color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 15px rgba(79,127,255,.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,127,255,.45); }
+  .login-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+  .login-footer a { color: var(--accent); font-weight: 500; cursor: pointer; }
+
+  #shell { flex-direction: row; min-height: 100vh; }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--navy);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: width .25s;
+  }
+  .sidebar-brand {
+    padding: 18px 20px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .brand-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff; flex-shrink: 0;
+  }
+  .brand-name { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; color: #fff; }
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-section-label {
+    font-size: 10px; font-weight: 600; color: rgba(255,255,255,.3);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 12px 20px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 20px; cursor: pointer;
+    color: rgba(255,255,255,.6); font-size: 13.5px; font-weight: 500;
+    border-left: 3px solid transparent; transition: all .15s;
+    text-decoration: none; margin: 1px 0;
+  }
+  .nav-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+  .nav-item.active { color: #fff; background: rgba(79,127,255,.18); border-left-color: var(--accent); }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer {
+    padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #4F7FFF, #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: rgba(255,255,255,.4); }
+  .logout-btn { font-size: 16px; color: rgba(255,255,255,.4); cursor: pointer; }
+  .logout-btn:hover { color: var(--red); }
+
+  .main-area { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    height: var(--topbar-h); background: #fff; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 28px; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .topbar-title { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 17px; color: var(--navy); flex: 1; }
+  .topbar-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; width: 220px;
+  }
+  .topbar-search input { border: none; background: transparent; font-size: 13px; outline: none; color: var(--text); flex: 1; font-family: 'Inter', sans-serif; }
+  .topbar-search input::placeholder { color: #B0BAD1; }
+  .topbar-icon-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--muted); position: relative;
+    transition: border-color .15s;
+  }
+  .topbar-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .badge {
+    position: absolute; top: -4px; right: -4px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+  .topbar-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(79,127,255,.3);
+  }
+
+  .page-content { padding: 28px; flex: 1; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 20px 22px;
+    border: 1.5px solid var(--border); position: relative; overflow: hidden;
+    transition: box-shadow .2s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.07); }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .stat-card.total::before { background: var(--accent); }
+  .stat-card.pending::before { background: var(--amber); }
+  .stat-card.approved::before { background: var(--green); }
+  .stat-card.rejected::before { background: var(--red); }
+  .stat-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .stat-value { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 34px; line-height: 1; }
+  .stat-value.total { color: var(--accent); }
+  .stat-value.pending { color: var(--amber); }
+  .stat-value.approved { color: var(--green); }
+  .stat-value.rejected { color: var(--red); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .card {
+    background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-title { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--navy); }
+  .card-body { padding: 16px 20px; }
+  .view-all { font-size: 12.5px; color: var(--accent); font-weight: 500; cursor: pointer; }
+  .view-all:hover { text-decoration: underline; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; padding: 10px 16px; text-align: left; background: var(--surface); border-bottom: 1.5px solid var(--border); }
+  td { padding: 13px 16px; font-size: 13.5px; color: var(--text); border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFBFF; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+  }
+  .chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .chip.approved { background: var(--green-soft); color: var(--green); }
+  .chip.approved::before { background: var(--green); }
+  .chip.pending { background: var(--amber-soft); color: var(--amber); }
+  .chip.pending::before { background: var(--amber); }
+  .chip.rejected { background: var(--red-soft); color: var(--red); }
+  .chip.rejected::before { background: var(--red); }
+  .chip.available { background: #DCFCE7; color: #15803D; }
+  .chip.available::before { background: #15803D; }
+
+  .schedule-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .schedule-item:last-child { border-bottom: none; }
+  .schedule-time { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; min-width: 80px; margin-top: 2px; }
+  .schedule-info { flex: 1; }
+  .schedule-title { font-size: 13.5px; font-weight: 600; color: var(--navy); }
+  .schedule-team { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .schedule-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+  .notif-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-icon {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .notif-icon.new { background: var(--blue-soft); color: var(--accent); }
+  .notif-icon.ok { background: var(--green-soft); color: var(--green); }
+  .notif-icon.err { background: var(--red-soft); color: var(--red); }
+  .notif-icon.warn { background: var(--amber-soft); color: var(--amber); }
+  .notif-content { flex: 1; }
+  .notif-title { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .notif-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .notif-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .notif-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
+
+  .wizard-steps {
+    display: flex; align-items: center; gap: 0; margin-bottom: 28px;
+  }
+  .wstep {
+    display: flex; align-items: center; gap: 8px; flex: 1;
+    padding-bottom: 12px; border-bottom: 2.5px solid var(--border);
+    transition: border-color .2s;
+  }
+  .wstep.active { border-bottom-color: var(--accent); }
+  .wstep.done { border-bottom-color: var(--green); }
+  .wstep-num {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--muted); transition: all .2s;
+  }
+  .wstep.active .wstep-num { border-color: var(--accent); color: var(--accent); background: var(--blue-soft); }
+  .wstep.done .wstep-num { border-color: var(--green); background: var(--green); color: #fff; }
+  .wstep-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .wstep.active .wstep-label { color: var(--accent); }
+  .wstep.done .wstep-label { color: var(--green); }
+  .wstep-arrow { font-size: 12px; color: var(--border); margin: 0 8px; flex-shrink: 0; }
+
+  .field-group { margin-bottom: 20px; }
+  .field-label { font-size: 12.5px; font-weight: 600; color: var(--navy); margin-bottom: 7px; display: block; }
+  .field-label span { color: var(--red); }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 13.5px; font-family: 'Inter', sans-serif;
+    color: var(--text); background: #fff; outline: none; transition: border .2s;
+  }
+  .field-input:focus, .field-select:focus, .field-textarea:focus { border-color: var(--accent); }
+  .field-textarea { min-height: 80px; resize: vertical; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  .btn { padding: 10px 22px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all .15s; border: none; }
+  .btn-primary2 { background: linear-gradient(135deg, var(--accent), #3B63D4); color: #fff; box-shadow: 0 3px 10px rgba(79,127,255,.3); }
+  .btn-primary2:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(79,127,255,.4); }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-success { background: var(--green); color: #fff; }
+
+  .checkbox-list { display: flex; flex-direction: column; gap: 10px; }
+  .checkbox-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; }
+  .checkbox-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .radio-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; }
+  .radio-item input[type=radio] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+  .center-screen { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 40px; }
+  .success-icon { width: 80px; height: 80px; border-radius: 50%; background: var(--green-soft); display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px; }
+  .success-title { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 22px; color: var(--navy); margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--muted); text-align: center; max-width: 320px; margin-bottom: 16px; line-height: 1.6; }
+  .request-id { display: inline-block; padding: 8px 18px; background: var(--blue-soft); border: 1.5px solid #C7D9FF; border-radius: 8px; font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 24px; }
+
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-nav { display: flex; align-items: center; gap: 8px; }
+  .cal-btn { width: 30px; height: 30px; border-radius: 6px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .cal-month { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px; color: var(--navy); }
+  .cal-view-tabs { display: flex; gap: 4px; }
+  .cal-view-tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--muted); }
+  .cal-view-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cal-grid { width: 100%; border-collapse: collapse; }
+  .cal-grid th { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 8px 4px; text-align: center; }
+  .cal-grid td { vertical-align: top; border: 1px solid var(--border); padding: 6px; min-height: 80px; width: 14.28%; font-size: 12px; }
+  .cal-day-num { font-weight: 600; color: var(--navy); margin-bottom: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .cal-day-num.today { background: var(--accent); color: #fff; }
+  .cal-other-month { color: #D1D5DB; }
+  .cal-event { font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .cal-event.approved { background: #BBF7D0; color: #166534; }
+  .cal-event.pending { background: #FDE68A; color: #92400E; }
+  .cal-event.rejected { background: #FCA5A5; color: #991B1B; }
+
+  .report-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .report-stat { background: #fff; border-radius: var(--radius); padding: 16px; border: 1.5px solid var(--border); text-align: center; }
+  .report-stat-val { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 28px; }
+  .report-stat-pct { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .report-stat-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+
+  .pie-legend { display: flex; flex-direction: column; gap: 8px; }
+  .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .pie-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pie-name { flex: 1; color: var(--text); }
+  .pie-val { font-weight: 600; color: var(--navy); }
+
+  .detail-section { margin-bottom: 20px; }
+  .detail-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .detail-key { font-size: 12px; font-weight: 600; color: var(--muted); width: 100px; flex-shrink: 0; }
+  .detail-val { font-size: 13px; color: var(--text); }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .page-header-left h1 { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 22px; color: var(--navy); }
+  .page-header-left p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .breadcrumb span { color: var(--navy); font-weight: 500; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1.5px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 10px 18px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: all .15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab:hover:not(.active) { color: var(--navy); }
+
+  .filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .filter-select { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; color: var(--text); background: #fff; outline: none; }
+  .filter-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; flex: 1; max-width: 280px; }
+  .filter-search input { border: none; background: transparent; font-size: 13px; outline: none; flex: 1; font-family: 'Inter', sans-serif; }
+
+  .icon { font-style: normal; }
+  .text-link { color: var(--accent); cursor: pointer; font-weight: 500; text-decoration: none; }
+  .text-link:hover { text-decoration: underline; }
+
+  .action-btn { width: 30px; height: 30px; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 4px; transition: opacity .15s; }
+  .action-btn:hover { opacity: .8; }
+  .action-btn.ok { background: var(--green-soft); color: var(--green); }
+  .action-btn.err { background: var(--red-soft); color: var(--red); }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; margin-top: 8px; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height .3s; }
+  .bar-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .bar-val { font-size: 10px; font-weight: 700; color: var(--navy); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  .mt-16 { margin-top: 16px; }
+  .tag { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; background: var(--blue-soft); color: var(--accent); margin-right: 4px; }
+  .separator { height: 1px; background: var(--border); margin: 16px 0; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13.5px; }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .pg-btn { width: 32px; height: 32px; border-radius: 6px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .slot-detail-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; }
+  .slot-detail-title { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); }
+  .slot-detail-body { padding: 24px; }
+
+  @media (max-width: 1100px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .error-msg { color: var(--red); font-size: 12px; margin-top: 4px; display: none; }
+  .loading { text-align: center; padding: 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">📅</div>
+      <div class="login-logo-text">SlotFlow</div>
+    </div>
+    <div class="login-subtitle">Slot Management & Approval System</div>
+    <div class="login-heading">Welcome Back!</div>
+    <div class="login-desc">Sign in to continue</div>
+
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" placeholder="Enter your email" id="login-email">
+      <div class="error-msg" id="login-error">Invalid credentials</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" placeholder="Enter your password" id="login-pw">
+    </div>
+    <a class="forgot">Forgot password?</a>
+
+    <button class="btn-primary" onclick="doLogin()">Sign In</button>
+    <div class="login-footer">Don't have an account? <a onclick="alert('Please contact your administrator.')">Contact Admin</a></div>
+
+    <div style="margin-top:24px; padding:14px; background:#F8FAFF; border-radius:8px; border:1px solid #E2E8F4;">
+      <div style="font-size:11.5px; font-weight:600; color:#64748B; margin-bottom:8px;">DEMO ACCOUNTS</div>
+      <div style="font-size:12.5px; color:#0F1B3D; margin-bottom:4px;">🧑‍💼 <b>admin@slotflow.com</b> → Admin view</div>
+      <div style="font-size:12.5px; color:#0F1B3D;">👩‍💼 <b>hr@slotflow.com</b> → HR Approval view</div>
+      <div style="font-size:11px; color:#94A3B8; margin-top:4px;">Password: password123</div>
+    </div>
+  </div>
+</div>
+
+<div id="shell" class="screen">
+
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📅</div>
+      <span class="brand-name">SlotFlow</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a class="nav-item" onclick="showPage('calendar')" id="nav-calendar"><span class="nav-icon">📆</span> Calendar</a>
+      <a class="nav-item" onclick="showPage('slots')" id="nav-slots"><span class="nav-icon">🔲</span> Slots</a>
+      <a class="nav-item" onclick="showPage('notifications')" id="nav-notifications"><span class="nav-icon">🔔</span> Notifications</a>
+      <a class="nav-item" onclick="showPage('reports')" id="nav-reports"><span class="nav-icon">📊</span> Reports</a>
+      <div id="nav-hr-section" style="display:none;">
+        <div class="nav-section-label">HR Tools</div>
+        <a class="nav-item" onclick="showPage('approvals')" id="nav-approvals"><span class="nav-icon">✅</span> Pending Approvals</a>
+      </div>
+      <div class="nav-section-label">Settings</div>
+      <a class="nav-item" onclick="showPage('users')" id="nav-users"><span class="nav-icon">👥</span> Users</a>
+      <a class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙️</span> Settings</a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-avatar" id="sidebar-avatar">HP</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-name">Hardik Patel</div>
+        <div class="user-role" id="sidebar-role">Admin</div>
+      </div>
+      <span class="logout-btn" onclick="doLogout()" title="Sign out">⏏</span>
+    </div>
+  </nav>
+
+  <div class="main-area">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-search">
+        <span style="font-size:14px;color:#B0BAD1;">🔍</span>
+        <input placeholder="Search slots, teams…">
+      </div>
+      <div class="topbar-icon-btn" onclick="showPage('notifications')">
+        🔔
+        <div class="badge" id="notif-badge">0</div>
+      </div>
+      <div class="topbar-avatar" id="topbar-avatar">HP</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page-content">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Dashboard</h1>
+          <p>Overview of all slots and team schedules</p>
+        </div>
+        <button class="btn btn-primary2" onclick="showPage('create-slot')">+ Create Slot</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card total">
+          <div class="stat-label">Total Slots</div>
+          <div class="stat-value total" id="stat-total">0</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-label">Pending Approval</div>
+          <div class="stat-value pending" id="stat-pending">0</div>
+          <div class="stat-sub">Awaiting HR</div>
+        </div>
+        <div class="stat-card approved">
+          <div class="stat-label">Approved Slots</div>
+          <div class="stat-value approved" id="stat-approved">0</div>
+          <div class="stat-sub" id="stat-approved-rate">0% approval rate</div>
+        </div>
+        <div class="stat-card rejected">
+          <div class="stat-label">Rejected Slots</div>
+          <div class="stat-value rejected" id="stat-rejected">0</div>
+          <div class="stat-sub" id="stat-rejected-rate">0% rejection</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📅 Today's Schedule</span>
+            <span class="view-all" onclick="showPage('slots')">View all</span>
+          </div>
+          <div class="card-body" id="today-schedule">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🔔 Recent Notifications</span>
+            <span class="view-all" onclick="showPage('notifications')">View all</span>
+          </div>
+          <div class="card-body" id="recent-notifications">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE SLOT -->
+    <div id="page-create-slot" class="page-content" style="display:none;">
+      <div class="breadcrumb">Dashboard › <span>Create Slot</span></div>
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Create Floor Slot</h1>
+          <p>Fill in the details below to request a new slot</p>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:760px;overflow:visible;">
+        <div class="card-body">
+          <div class="wizard-steps">
+            <div class="wstep active" id="ws1">
+              <div class="wstep-num">1</div>
+              <div class="wstep-label">Slot Details</div>
+            </div>
+            <div class="wstep-arrow">›</div>
+            <div class="wstep" id="ws2">
+              <div class="wstep-num">2</div>
+              <div class="wstep-label">Team & Members</div>
+            </div>
+            <div class="wstep-arrow">›</div>
+            <div class="wstep" id="ws3">
+              <div class="wstep-num">3</div>
+              <div class="wstep-label">Review & Submit</div>
+            </div>
+          </div>
+
+          <div id="wizard-step-1">
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Category <span>*</span></label>
+                <select class="field-select" id="slot-category"><option value="design">Design</option><option value="development">Development</option><option value="embroidery">Embroidery</option><option value="qa">QA</option></select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Date <span>*</span></label>
+                <input class="field-input" type="date" id="slot-date">
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Start Time <span>*</span></label>
+                <input class="field-input" type="time" id="slot-start-time">
+              </div>
+              <div class="field-group">
+                <label class="field-label">End Time <span>*</span></label>
+                <input class="field-input" type="time" id="slot-end-time">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Title <span>*</span></label>
+              <input class="field-input" type="text" id="slot-title" placeholder="Enter slot title">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Description (Optional)</label>
+              <textarea class="field-textarea" id="slot-description" placeholder="Add a description…"></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="showPage('dashboard')">Cancel</button>
+              <button class="btn btn-primary2" onclick="wizardStep(2)">Next →</button>
+            </div>
+          </div>
+
+          <div id="wizard-step-2" style="display:none;">
+            <div class="field-group">
+              <label class="field-label">Team <span>*</span></label>
+              <select class="field-select" id="slot-team"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Team Lead <span>*</span></label>
+              <select class="field-select" id="slot-team-lead"></select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Developers <span>*</span></label>
+              <div class="checkbox-list" id="slot-developers"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="wizardStep(1)">← Back</button>
+              <button class="btn btn-primary2" onclick="wizardStep(3)">Next →</button>
+            </div>
+          </div>
+
+          <div id="wizard-step-3" style="display:none;">
+            <div style="background:var(--surface); border-radius:10px; padding:20px; border:1.5px solid var(--border); margin-bottom:20px;">
+              <div style="font-family:'Manrope',sans-serif; font-weight:700; font-size:14px; color:var(--navy); margin-bottom:14px;">Review Details</div>
+              <div class="detail-row"><div class="detail-key">Category</div><div class="detail-val" id="review-category"></div></div>
+              <div class="detail-row"><div class="detail-key">Title</div><div class="detail-val" id="review-title"></div></div>
+              <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val" id="review-date"></div></div>
+              <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val" id="review-time"></div></div>
+              <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val" id="review-team"></div></div>
+              <div class="detail-row"><div class="detail-key">Team Lead</div><div class="detail-val" id="review-lead"></div></div>
+              <div class="detail-row"><div class="detail-key">Developers</div><div class="detail-val" id="review-devs"></div></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="wizardStep(2)">← Back</button>
+              <button class="btn btn-primary2" onclick="submitSlot()">Submit Request ✓</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT SUBMITTED -->
+    <div id="page-slot-submitted" class="page-content" style="display:none;">
+      <div class="center-screen">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Slot Submitted Successfully!</div>
+        <div class="success-sub">Your slot request is pending approval from the HR Department. You'll receive a notification once reviewed.</div>
+        <div class="request-id" id="submitted-request-id">#SLT-2026-00121</div>
+        <button class="btn btn-primary2" onclick="showPage('dashboard')">Go to Dashboard</button>
+      </div>
+    </div>
+
+    <!-- SLOTS -->
+    <div id="page-slots" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>All Slots</h1>
+          <p>Manage and track all slot requests</p>
+        </div>
+        <button class="btn btn-primary2" onclick="showPage('create-slot')">+ Create Slot</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-search">
+          <span style="color:#B0BAD1;font-size:14px;">🔍</span>
+          <input placeholder="Search by title or team…" id="slots-search">
+        </div>
+        <select class="filter-select" id="slots-filter-status"><option value="">All Status</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option></select>
+        <select class="filter-select" id="slots-filter-team"><option value="">All Teams</option></select>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Title</th>
+              <th>Team</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Requested By</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="slots-table-body">
+            <tr><td colspan="8" class="loading">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SLOT DETAIL (Pending) -->
+    <div id="page-slot-detail" class="page-content" style="display:none;">
+      <div class="breadcrumb">Slots › <span id="detail-title-pending">Slot Details</span></div>
+      <div class="card" style="max-width:500px; margin-top:16px;">
+        <div class="slot-detail-header">
+          <div>
+            <div style="margin-bottom:8px;"><span class="chip pending" id="detail-status-pending">Pending Approval</span></div>
+            <div class="slot-detail-title" id="detail-name-pending"></div>
+          </div>
+        </div>
+        <div class="slot-detail-body">
+          <div id="detail-fields-pending"></div>
+          <div class="separator"></div>
+          <div style="background:var(--amber-soft); border-radius:8px; padding:12px 14px; font-size:13px; color:#92400E; border:1px solid #FDE68A;">
+            ⏳ Awaiting review from HR Department.
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-ghost" onclick="showPage('slots')">← Back to Slots</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT DETAIL (Approved) -->
+    <div id="page-slot-detail-approved" class="page-content" style="display:none;">
+      <div class="breadcrumb">Slots › <span id="detail-title-approved">Slot Details</span></div>
+      <div class="card" style="max-width:680px; margin-top:16px;">
+        <div class="slot-detail-header">
+          <div>
+            <div style="margin-bottom:8px;"><span class="chip approved">Approved</span></div>
+            <div class="slot-detail-title" id="detail-name-approved"></div>
+          </div>
+          <button class="btn btn-ghost" onclick="showPage('slots')">Back</button>
+        </div>
+        <div class="slot-detail-body">
+          <div class="grid-2">
+            <div id="detail-fields-approved"></div>
+            <div style="background:var(--green-soft); border-radius:10px; padding:16px; border:1px solid #BBF7D0;" id="detail-approval-info"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT DETAIL (Rejected) -->
+    <div id="page-slot-detail-rejected" class="page-content" style="display:none;">
+      <div class="breadcrumb">Slots › <span id="detail-title-rejected">Slot Details</span></div>
+      <div class="card" style="max-width:680px; margin-top:16px;">
+        <div class="slot-detail-header">
+          <div>
+            <div style="margin-bottom:8px;"><span class="chip rejected">Rejected</span></div>
+            <div class="slot-detail-title" id="detail-name-rejected"></div>
+          </div>
+          <button class="btn btn-ghost" onclick="showPage('slots')">Back</button>
+        </div>
+        <div class="slot-detail-body">
+          <div class="grid-2">
+            <div id="detail-fields-rejected"></div>
+            <div style="background:var(--red-soft); border-radius:10px; padding:16px; border:1px solid #FECACA;" id="detail-rejection-info"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="page-notifications" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Notifications</h1><p>Stay updated on all slot activities</p></div>
+        <button class="btn btn-ghost" style="font-size:13px;" onclick="markAllRead()">Mark all as read</button>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0;" id="notifications-list">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR APPROVALS -->
+    <div id="page-approvals" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Pending Approvals</h1><p>Review and action slot requests from teams</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Title</th>
+              <th>Team</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Requested By</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="approvals-table-body">
+            <tr><td colspan="7" class="loading">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- APPROVE SLOT -->
+    <div id="page-approve-slot" class="page-content" style="display:none;">
+      <div class="breadcrumb">Pending Approvals › <span>Approve Slot</span></div>
+      <div class="grid-2" style="margin-top:16px; align-items:start;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Slot Details</span></div>
+          <div class="card-body" id="approve-slot-details"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Approval Action</span></div>
+          <div class="card-body">
+            <div class="field-group">
+              <label class="field-label">Comment (Optional)</label>
+              <textarea class="field-textarea" id="approve-comment" placeholder="Add a comment…"></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" onclick="showPage('approvals')">Cancel</button>
+              <button class="btn btn-success" onclick="approveSlot()">Approve ✓</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REJECT SLOT -->
+    <div id="page-reject-slot" class="page-content" style="display:none;">
+      <div class="breadcrumb">Pending Approvals › <span>Reject Slot</span></div>
+      <div class="card" style="max-width:680px; margin-top:16px;">
+        <div class="card-header"><span class="card-title">Reject Slot</span></div>
+        <div class="card-body">
+          <div class="grid-2">
+            <div id="reject-slot-details"></div>
+            <div>
+              <div class="field-group">
+                <label class="field-label">Reason <span>*</span></label>
+                <textarea class="field-textarea" id="reject-reason"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-ghost" onclick="showPage('approvals')">Cancel</button>
+            <button class="btn btn-danger" onclick="rejectSlot()">Reject ✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="page-calendar" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Calendar</h1><p>Visual overview of all approved slots</p></div>
+        <button class="btn btn-primary2" onclick="showPage('create-slot')">+ Create Slot</button>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="cal-header">
+            <div class="cal-nav">
+              <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+              <span class="cal-month" id="cal-month-label">July 2026</span>
+              <button class="cal-btn" onclick="changeMonth(1)">›</button>
+              <button class="cal-btn" style="font-size:11px; padding:0 10px; width:auto;" onclick="goToday()">Today</button>
+            </div>
+          </div>
+          <table class="cal-grid">
+            <thead>
+              <tr>
+                <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+              </tr>
+            </thead>
+            <tbody id="cal-body"></tbody>
+          </table>
+          <div style="display:flex; gap:20px; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);">
+              <div style="width:12px; height:12px; border-radius:3px; background:#BBF7D0;"></div> Approved
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);">
+              <div style="width:12px; height:12px; border-radius:3px; background:#FDE68A;"></div> Pending
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);">
+              <div style="width:12px; height:12px; border-radius:3px; background:#FCA5A5;"></div> Rejected
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="page-reports" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Reports</h1><p>Analytics and insights across all teams</p></div>
+      </div>
+
+      <div class="report-stat-grid">
+        <div class="report-stat"><div class="report-stat-val" id="rpt-total" style="color:var(--accent);">0</div><div class="report-stat-label">Total Slots</div></div>
+        <div class="report-stat"><div class="report-stat-val" id="rpt-approved" style="color:var(--green);">0</div><div class="report-stat-pct" id="rpt-approved-pct" style="color:var(--green);">0%</div><div class="report-stat-label">Approved</div></div>
+        <div class="report-stat"><div class="report-stat-val" id="rpt-rejected" style="color:var(--amber);">0</div><div class="report-stat-pct" id="rpt-rejected-pct" style="color:var(--amber);">0%</div><div class="report-stat-label">Rejected</div></div>
+        <div class="report-stat"><div class="report-stat-val" id="rpt-pending" style="color:var(--red);">0</div><div class="report-stat-pct" id="rpt-pending-pct" style="color:var(--red);">0%</div><div class="report-stat-label">Pending</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Slots by Department</span></div>
+          <div class="card-body" id="dept-breakdown"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Team Breakdown</span></div>
+          <table>
+            <thead><tr><th>Department</th><th>Total</th><th>Approved</th><th>Rejected</th><th>Pending</th><th>Rate</th></tr></thead>
+            <tbody id="team-breakdown-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="page-users" class="page-content" style="display:none;">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Users</h1><p>Manage team members and their roles</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Team</th><th>Role</th><th>Status</th></tr></thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page-content" style="display:none;">
+      <div class="page-header"><div class="page-header-left"><h1>Settings</h1><p>Manage your account and system preferences</p></div></div>
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Profile Settings</span></div>
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+              <div class="user-avatar" style="width:56px;height:56px;font-size:18px;" id="settings-avatar">HP</div>
+              <div><div style="font-weight:700;font-size:15px;color:var(--navy);" id="settings-name"></div><div style="font-size:13px;color:var(--muted);" id="settings-role"></div></div>
+            </div>
+            <div class="field-group"><label class="field-label">Full Name</label><input class="field-input" id="settings-fullname"></div>
+            <div class="field-group"><label class="field-label">Email</label><input class="field-input" id="settings-email"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── API CALLS ────────────────────────────────────────────
+const API = {
+  get: async (url) => {
+    const r = await fetch(url, { credentials: 'include' });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  post: async (url, data) => {
+    const r = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+};
+
+function getCookie(name) {
+  let c = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return c ? decodeURIComponent(c[2]) : '';
+}
+
+// ── AUTH ────────────────────────────────────────────────
+let currentUser = null;
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pw = document.getElementById('login-pw').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (!email || !pw) { errEl.textContent = 'Please enter email and password.'; errEl.style.display = 'block'; return; }
+
+  try {
+    const data = await API.post('/api/auth/login/', { email, password });
+    currentUser = data;
+    afterLogin(data);
+  } catch (e) {
+    // For demo: accept any password
+    const isHR = email.includes('hr');
+    currentUser = {
+      id: 1,
+      username: email.split('@')[0],
+      email: email,
+      full_name: isHR ? 'HR User' : 'Hardik Patel',
+      first_name: isHR ? 'HR' : 'Hardik',
+      last_name: isHR ? 'User' : 'Patel',
+      role: isHR ? 'hr' : 'admin',
+      is_active: true,
+    };
+    afterLogin(currentUser);
+  }
+}
+
+function afterLogin(user) {
+  const initials = (user.full_name || user.email).split(' ').map(s => s[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  document.getElementById('sidebar-name').textContent = user.full_name || user.email;
+  document.getElementById('sidebar-role').textContent = user.role === 'hr' ? 'HR Department' : 'Admin';
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('topbar-avatar').textContent = initials;
+  document.getElementById('settings-fullname').value = user.full_name || '';
+  document.getElementById('settings-email').value = user.email;
+  document.getElementById('settings-name').textContent = user.full_name || user.email;
+  document.getElementById('settings-role').textContent = user.role === 'hr' ? 'HR Department' : 'Admin';
+  document.getElementById('settings-avatar').textContent = initials;
+
+  if (user.role === 'admin') {
+    document.getElementById('nav-hr-section').style.display = 'block';
+  }
+
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('shell').classList.add('active');
+  showPage('dashboard');
+  loadDashboard();
+}
+
+function doLogout() {
+  document.getElementById('shell').classList.remove('active');
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  currentUser = null;
+  document.getElementById('nav-hr-section').style.display = 'none';
+}
+
+document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── PAGE ROUTING ────────────────────────────────────────
+const pages = [
+  'dashboard','create-slot','slot-submitted','slots','notifications',
+  'approvals','approve-slot','reject-slot','calendar','reports',
+  'users','settings','slot-detail','slot-detail-approved','slot-detail-rejected'
+];
+const titles = {
+  'dashboard': 'Dashboard', 'create-slot': 'Create Slot', 'slot-submitted': 'Slot Submitted',
+  'slots': 'All Slots', 'notifications': 'Notifications', 'approvals': 'Pending Approvals',
+  'approve-slot': 'Approve Slot', 'reject-slot': 'Reject Slot', 'calendar': 'Calendar',
+  'reports': 'Reports', 'users': 'Users', 'settings': 'Settings',
+  'slot-detail': 'Slot Details', 'slot-detail-approved': 'Slot Details', 'slot-detail-rejected': 'Slot Details',
+};
+const navMap = {
+  'dashboard': 'nav-dashboard', 'slots': 'nav-slots', 'create-slot': 'nav-slots',
+  'slot-detail': 'nav-slots', 'slot-detail-approved': 'nav-slots', 'slot-detail-rejected': 'nav-slots',
+  'slot-submitted': 'nav-slots', 'notifications': 'nav-notifications',
+  'approvals': 'nav-approvals', 'approve-slot': 'nav-approvals', 'reject-slot': 'nav-approvals',
+  'calendar': 'nav-calendar', 'reports': 'nav-reports', 'users': 'nav-users', 'settings': 'nav-settings',
+};
+
+function showPage(name) {
+  pages.forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById('page-' + name);
+  if (target) target.style.display = '';
+
+  document.getElementById('topbar-title').textContent = titles[name] || name;
+
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navId = navMap[name];
+  if (navId) {
+    const navEl = document.getElementById(navId);
+    if (navEl) navEl.classList.add('active');
+  }
+
+  if (name === 'approvals' && (!currentUser || currentUser.role !== 'admin')) { showPage('dashboard'); return; }
+  if (name === 'create-slot') wizardStep(1);
+  if (name === 'slots') loadSlots();
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'notifications') loadNotifications();
+  if (name === 'approvals') loadApprovals();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'reports') loadReports();
+  if (name === 'users') loadUsers();
+
+  window.scrollTo(0, 0);
+}
+
+// ── WIZARD ──────────────────────────────────────────────
+function wizardStep(n) {
+  // Validate step 2 before advancing to step 3
+  if (n === 3) {
+    const team = document.getElementById('slot-team').value;
+    const lead = document.getElementById('slot-team-lead').value;
+    if (!team || team === '') { alert('Please select a team first.'); return; }
+    if (!lead || lead === '') { alert('Please select a team lead.'); return; }
+    updateReview();
+  }
+  [1, 2, 3].forEach(i => {
+    document.getElementById('wizard-step-' + i).style.display = i === n ? '' : 'none';
+    const ws = document.getElementById('ws' + i);
+    ws.classList.remove('active', 'done');
+    if (i < n) ws.classList.add('done');
+    else if (i === n) ws.classList.add('active');
+    ws.querySelector('.wstep-num').textContent = i < n ? '✓' : i;
+  });
+  if (n === 2) loadCreateFormData();
+  if (n === 3) updateReview();
+}
+
+async function loadCreateFormData() {
+  const leadSel = document.getElementById('slot-team-lead');
+  const devsContainer = document.getElementById('slot-developers');
+  leadSel.innerHTML = '<option value="">Loading...</option>';
+  devsContainer.innerHTML = '<div style="color:var(--muted);font-size:13px;">Loading...</div>';
+
+  let teams, users;
+  try {
+    [teams, users] = await Promise.all([
+      API.get('/api/slots/teams/'),
+      API.get('/api/auth/')
+    ]);
+  } catch (e) {
+    console.warn('API unavailable, using demo data');
+    teams = [
+      { id: 1, name: 'Design Team' },
+      { id: 2, name: 'Development Team' },
+      { id: 3, name: 'Embroidery Team' },
+      { id: 4, name: 'QA Team' },
+    ];
+    users = [
+      { id: 1, username: 'hardik', full_name: 'Hardik Patel', role: 'admin', team: null },
+      { id: 2, username: 'rahul', full_name: 'Rahul Sharma', role: 'team_lead', team: null },
+      { id: 3, username: 'amit', full_name: 'Amit Verma', role: 'developer', team: null },
+      { id: 4, username: 'jay', full_name: 'Jay Mehta', role: 'developer', team: null },
+      { id: 5, username: 'pooja', full_name: 'Pooja Singh', role: 'team_lead', team: null },
+      { id: 6, username: 'ravi', full_name: 'Ravi Kumar', role: 'developer', team: null },
+    ];
+  }
+
+  if (!teams || !teams.length) teams = [{ id: 1, name: 'Default Team' }];
+  if (!users || !users.length) users = [];
+
+  const teamSel = document.getElementById('slot-team');
+  teamSel.innerHTML = '';
+  teams.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    teamSel.appendChild(opt);
+  });
+
+  leadSel.innerHTML = '';
+  const leads = users.filter(u => u.role === 'team_lead' || u.role === 'admin');
+  if (!leads.length) {
+    leadSel.innerHTML = '<option value="">No team leads available</option>';
+  } else {
+    leads.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.full_name;
+      leadSel.appendChild(opt);
+    });
+  }
+
+  devsContainer.innerHTML = '';
+  if (!users.length) {
+    devsContainer.innerHTML = '<div style="color:var(--muted);font-size:13px;">No users available</div>';
+  } else {
+    users.forEach(u => {
+      const label = document.createElement('label');
+      label.className = 'checkbox-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = u.id;
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(' ' + (u.full_name || u.username)));
+      devsContainer.appendChild(label);
+    });
+  }
+}
+
+function toAmPm(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function updateReview() {
+  const catMap = { design: 'Design', development: 'Development', embroidery: 'Embroidery', qa: 'QA' };
+  document.getElementById('review-category').textContent = catMap[document.getElementById('slot-category').value] || '';
+  document.getElementById('review-title').textContent = document.getElementById('slot-title').value || '-';
+  document.getElementById('review-date').textContent = document.getElementById('slot-date').value || '-';
+  document.getElementById('review-time').textContent =
+    toAmPm(document.getElementById('slot-start-time').value) + ' – ' + toAmPm(document.getElementById('slot-end-time').value);
+  const teamSel = document.getElementById('slot-team');
+  document.getElementById('review-team').textContent = teamSel.options[teamSel.selectedIndex]?.text || '-';
+  const leadSel = document.getElementById('slot-team-lead');
+  document.getElementById('review-lead').textContent = leadSel.options[leadSel.selectedIndex]?.text || '-';
+  const checked = document.querySelectorAll('#slot-developers input:checked');
+  document.getElementById('review-devs').textContent = Array.from(checked).map(cb => cb.closest('label').textContent.trim()).join(', ') || '-';
+}
+
+// ── DEMO DATA ────────────────────────────────────────────
+const DEMO = {
+  _nextId: 1,
+  _nextNotifId: 1,
+  slots: [],
+  users: [
+    { id: 1, username: 'hardik', email: 'hardik@slotflow.com', full_name: 'Hardik Patel', role: 'admin', team: null, is_active: true },
+    { id: 2, username: 'rahul', email: 'rahul@slotflow.com', full_name: 'Rahul Sharma', role: 'team_lead', team: null, is_active: true },
+    { id: 3, username: 'amit', email: 'amit@slotflow.com', full_name: 'Amit Verma', role: 'developer', team: null, is_active: true },
+    { id: 4, username: 'jay', email: 'jay@slotflow.com', full_name: 'Jay Mehta', role: 'developer', team: null, is_active: true },
+    { id: 5, username: 'pooja', email: 'pooja@slotflow.com', full_name: 'Pooja Singh', role: 'team_lead', team: null, is_active: true },
+    { id: 6, username: 'ravi', email: 'ravi@slotflow.com', full_name: 'Ravi Kumar', role: 'developer', team: null, is_active: true },
+  ],
+  notifications: [],
+  getStats() {
+    const all = this.slots;
+    return {
+      total: all.length,
+      pending: all.filter(s => s.status === 'pending').length,
+      approved: all.filter(s => s.status === 'approved').length,
+      rejected: all.filter(s => s.status === 'rejected').length,
+    };
+  },
+  getTodaySlots() {
+    const today = new Date().toISOString().split('T')[0];
+    return this.slots.filter(s => s.date === today);
+  },
+  getPendingSlots() {
+    return this.slots.filter(s => s.status === 'pending');
+  },
+  getSlots() {
+    return this.slots;
+  },
+  addNotification(type, title, message) {
+    const n = { id: this._nextNotifId++, type, title, message, created_at: new Date().toISOString(), is_read: false };
+    this.notifications.unshift(n);
+    return n;
+  },
+  addSubmitted(data) {
+    const id = this._nextId++;
+    const requestId = 'SLT-2026-' + String(id).padStart(5, '0');
+    const teamSel = document.getElementById('slot-team');
+    const teamName = teamSel.options[teamSel.selectedIndex]?.text || 'Unknown Team';
+    const slot = {
+      id, request_id: requestId, title: data.title, description: data.description,
+      category: data.category, category_display: data.category.charAt(0).toUpperCase() + data.category.slice(1),
+      team: data.team, team_name: teamName, team_lead: data.team_lead,
+      date: data.date, start_time: data.start_time, end_time: data.end_time,
+      requested_by: 1, requested_by_name: currentUser?.full_name || 'You',
+      status: 'pending', status_display: 'Pending',
+      approved_by: null, approved_at: null, rejection_reason: '', created_at: new Date().toISOString()
+    };
+    this.slots.unshift(slot);
+    this.addNotification('new_slot', 'New Slot Request', `${currentUser?.full_name || 'You'} requested "${data.title}" (${requestId}).`);
+    return requestId;
+  },
+  approveSlot(id) {
+    const slot = this.slots.find(s => s.id === id);
+    if (slot) {
+      slot.status = 'approved';
+      slot.status_display = 'Approved';
+      slot.approved_by = 'HR User';
+      slot.approved_at = new Date().toISOString();
+      this.addNotification('approved', 'Slot Approved', `Your slot "${slot.title}" (${slot.request_id}) has been approved.`);
+    }
+  },
+  rejectSlot(id, reason) {
+    const slot = this.slots.find(s => s.id === id);
+    if (slot) {
+      slot.status = 'rejected';
+      slot.status_display = 'Rejected';
+      slot.rejection_reason = reason;
+      this.addNotification('rejected', 'Slot Rejected', `Your slot "${slot.title}" (${slot.request_id}) has been rejected. Reason: ${reason}`);
+    }
+  },
+};
+
+// ── DASHBOARD ───────────────────────────────────────────
+async function loadDashboard() {
+  let stats, todaySlots, notifs;
+  try {
+    stats = await API.get('/api/slots/stats/');
+  } catch (e) { stats = DEMO.getStats(); }
+  document.getElementById('stat-total').textContent = stats.total || 0;
+  document.getElementById('stat-pending').textContent = stats.pending || 0;
+  document.getElementById('stat-approved').textContent = stats.approved || 0;
+  document.getElementById('stat-rejected').textContent = stats.rejected || 0;
+  const total = stats.total || 1;
+  document.getElementById('stat-approved-rate').textContent = Math.round((stats.approved || 0) / total * 100) + '% approval rate';
+  document.getElementById('stat-rejected-rate').textContent = Math.round((stats.rejected || 0) / total * 100) + '% rejection';
+
+  try {
+    todaySlots = await API.get('/api/slots/?date=' + new Date().toISOString().split('T')[0]);
+  } catch (e) { todaySlots = DEMO.getTodaySlots(); }
+  const container = document.getElementById('today-schedule');
+  if (!todaySlots || todaySlots.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No slots scheduled for today.</p></div>';
+  } else {
+    container.innerHTML = todaySlots.slice(0, 5).map(s => `
+      <div class="schedule-item">
+        <div class="schedule-dot" style="background:${s.status === 'approved' ? '#16A34A' : s.status === 'pending' ? '#D97706' : '#DC2626'};"></div>
+        <div class="schedule-time">${toAmPm(s.start_time)} – ${toAmPm(s.end_time)}</div>
+        <div class="schedule-info">
+          <div class="schedule-title">${s.title}</div>
+          <div class="schedule-team">${s.team_name}</div>
+        </div>
+        <span class="chip ${s.status}">${s.status_display}</span>
+      </div>
+    `).join('');
+  }
+
+  try {
+    notifs = await API.get('/api/notifications/');
+  } catch (e) { notifs = DEMO.notifications; }
+  const notifContainer = document.getElementById('recent-notifications');
+  if (!notifs || notifs.length === 0) {
+    notifContainer.innerHTML = '<div class="empty-state"><p>No notifications yet.</p></div>';
+  } else {
+    const iconMap = { new_slot: '📩', approved: '✅', rejected: '❌', updated: '🔄' };
+    const clsMap = { new_slot: 'new', approved: 'ok', rejected: 'err', updated: 'warn' };
+    notifContainer.innerHTML = notifs.slice(0, 3).map(n => `
+      <div class="notif-item">
+        <div class="notif-icon ${clsMap[n.type] || 'new'}">${iconMap[n.type] || '📩'}</div>
+        <div class="notif-content">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-sub">${n.message}</div>
+        </div>
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
+      </div>
+    `).join('');
+    document.getElementById('notif-badge').textContent = notifs.filter(n => !n.is_read).length;
+  }
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// ── SLOTS ───────────────────────────────────────────────
+async function loadSlots() {
+  const tbody = document.getElementById('slots-table-body');
+  let slots;
+  try {
+    const search = document.getElementById('slots-search')?.value || '';
+    const status = document.getElementById('slots-filter-status')?.value || '';
+    const team = document.getElementById('slots-filter-team')?.value || '';
+    let url = '/api/slots/?';
+    const params = [];
+    if (search) params.push('search=' + encodeURIComponent(search));
+    if (status) params.push('status=' + encodeURIComponent(status));
+    if (team) params.push('team=' + encodeURIComponent(team));
+    url += params.join('&');
+    slots = await API.get(url);
+  } catch (e) { slots = DEMO.getSlots(); }
+
+  if (!slots || slots.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><p>No slots found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = slots.map(s => `
+    <tr>
+      <td style="font-weight:600;color:var(--accent);">${s.request_id}</td>
+      <td>${s.title}</td>
+      <td><span class="tag">${s.team_name}</span></td>
+      <td>${s.date}</td>
+      <td>${toAmPm(s.start_time)}–${toAmPm(s.end_time)}</td>
+      <td>${s.requested_by_name}</td>
+      <td><span class="chip ${s.status}">${s.status_display}</span></td>
+      <td><button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="showSlotDetail(${s.id},'${s.status}')">View</button></td>
+    </tr>
+  `).join('');
+}
+
+function getSlotById(id) {
+  return DEMO.getSlots().find(s => s.id === id) || DEMO.slots[0];
+}
+
+async function showSlotDetail(id, status) {
+  let slot;
+  try {
+    slot = await API.get(`/api/slots/${id}/`);
+  } catch (e) { slot = getSlotById(id); }
+
+  if (status === 'approved') {
+    document.getElementById('detail-name-approved').textContent = slot.title;
+    document.getElementById('detail-fields-approved').innerHTML = `
+      <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val">${slot.team_name}</div></div>
+      <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val">${slot.date}</div></div>
+      <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val">${toAmPm(slot.start_time)} – ${toAmPm(slot.end_time)}</div></div>
+      <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val">${slot.description || '-'}</div></div>
+    `;
+    document.getElementById('detail-approval-info').innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Approval Information</div>
+      <div class="detail-row"><div class="detail-key">Approved By</div><div class="detail-val">${slot.approved_by || 'HR Department'}</div></div>
+      <div class="detail-row"><div class="detail-key">Approved On</div><div class="detail-val">${slot.approved_at ? new Date(slot.approved_at).toLocaleString() : '-'}</div></div>
+    `;
+    showPage('slot-detail-approved');
+  } else if (status === 'rejected') {
+    document.getElementById('detail-name-rejected').textContent = slot.title;
+    document.getElementById('detail-fields-rejected').innerHTML = `
+      <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val">${slot.team_name}</div></div>
+      <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val">${slot.date}</div></div>
+      <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val">${toAmPm(slot.start_time)} – ${toAmPm(slot.end_time)}</div></div>
+      <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val">${slot.description || '-'}</div></div>
+    `;
+    document.getElementById('detail-rejection-info').innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Rejection Reason</div>
+      <div style="font-size:13.5px;color:#991B1B;line-height:1.6;">${slot.rejection_reason || 'No reason provided.'}</div>
+    `;
+    showPage('slot-detail-rejected');
+  } else {
+    document.getElementById('detail-name-pending').textContent = slot.title;
+    document.getElementById('detail-fields-pending').innerHTML = `
+      <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val">${slot.team_name}</div></div>
+      <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val">${slot.date}</div></div>
+      <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val">${toAmPm(slot.start_time)} – ${toAmPm(slot.end_time)}</div></div>
+      <div class="detail-row"><div class="detail-key">Request ID</div><div class="detail-val" style="color:var(--accent);font-weight:600;">${slot.request_id}</div></div>
+      <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val">${slot.description || '-'}</div></div>
+    `;
+    showPage('slot-detail');
+  }
+}
+
+// ── SUBMIT SLOT ─────────────────────────────────────────
+async function submitSlot() {
+  const data = {
+    title: document.getElementById('slot-title').value,
+    description: document.getElementById('slot-description').value,
+    category: document.getElementById('slot-category').value,
+    team: parseInt(document.getElementById('slot-team').value),
+    team_lead: parseInt(document.getElementById('slot-team-lead').value),
+    developers: Array.from(document.querySelectorAll('#slot-developers input:checked')).map(cb => parseInt(cb.value)),
+    date: document.getElementById('slot-date').value,
+    start_time: document.getElementById('slot-start-time').value,
+    end_time: document.getElementById('slot-end-time').value,
+  };
+  let requestId;
+  try {
+    const result = await API.post('/api/slots/', data);
+    requestId = result.request_id;
+  } catch (e) {
+    requestId = DEMO.addSubmitted(data);
+  }
+  document.getElementById('submitted-request-id').textContent = requestId;
+  loadDashboard();
+  loadSlots();
+  loadNotifications();
+  showPage('slot-submitted');
+}
+
+// ── SLOTS FILTER EVENTS ─────────────────────────────────
+document.getElementById('slots-search')?.addEventListener('input', () => { clearTimeout(window._slotsTimer); window._slotsTimer = setTimeout(loadSlots, 400); });
+document.getElementById('slots-filter-status')?.addEventListener('change', loadSlots);
+document.getElementById('slots-filter-team')?.addEventListener('change', loadSlots);
+
+// ── NOTIFICATIONS ───────────────────────────────────────
+async function loadNotifications() {
+  const container = document.getElementById('notifications-list');
+  let notifs;
+  try {
+    notifs = await API.get('/api/notifications/');
+  } catch (e) { notifs = DEMO.notifications; }
+  document.getElementById('notif-badge').textContent = notifs.filter(n => !n.is_read).length;
+  if (notifs.length === 0) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);"><p>No notifications yet.</p></div>';
+    return;
+  }
+  const iconMap = { new_slot: '📩', approved: '✅', rejected: '❌', updated: '🔄' };
+  const clsMap = { new_slot: 'new', approved: 'ok', rejected: 'err', updated: 'warn' };
+  container.innerHTML = notifs.map(n => `
+    <div class="notif-item" style="padding:16px 20px;${n.is_read ? 'opacity:.75;' : ''}" onclick="markRead(${n.id})">
+      ${n.is_read ? '' : '<div class="notif-unread"></div>'}
+      <div class="notif-icon ${clsMap[n.type] || 'new'}">${iconMap[n.type] || '📩'}</div>
+      <div class="notif-content">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-sub">${n.message}</div>
+      </div>
+      <div class="notif-time">${timeAgo(n.created_at)}</div>
+    </div>
+  `).join('');
+}
+
+async function markRead(id) {
+  try { await API.post(`/api/notifications/${id}/mark_read/`); } catch (e) {}
+  loadNotifications();
+}
+
+async function markAllRead() {
+  try { await API.post('/api/notifications/mark_all_read/'); } catch (e) {}
+  loadNotifications();
+}
+
+// ── APPROVALS (HR) ──────────────────────────────────────
+let currentSlotId = null;
+
+async function loadApprovals() {
+  const tbody = document.getElementById('approvals-table-body');
+  let slots;
+  try {
+    slots = await API.get('/api/slots/?status=pending');
+  } catch (e) { slots = DEMO.getPendingSlots(); }
+  if (slots.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>No pending approvals.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = slots.map(s => `
+    <tr>
+      <td style="font-weight:600;color:var(--accent);">${s.request_id}</td>
+      <td>${s.title}</td>
+      <td><span class="tag">${s.team_name}</span></td>
+      <td>${s.date}</td>
+      <td>${toAmPm(s.start_time)}–${toAmPm(s.end_time)}</td>
+      <td>${s.requested_by_name}</td>
+      <td>
+        <button class="action-btn ok" onclick="openApprove(${s.id})" title="Approve">✓</button>
+        <button class="action-btn err" onclick="openReject(${s.id})" title="Reject">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function openApprove(id) {
+  currentSlotId = id;
+  let slot;
+  try {
+    slot = await API.get(`/api/slots/${id}/`);
+  } catch (e) { slot = getSlotById(id); }
+  document.getElementById('approve-slot-details').innerHTML = `
+    <div class="detail-row"><div class="detail-key">Title</div><div class="detail-val">${slot.title}</div></div>
+    <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val">${slot.team_name}</div></div>
+    <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val">${slot.date}</div></div>
+    <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val">${toAmPm(slot.start_time)} – ${toAmPm(slot.end_time)}</div></div>
+    <div class="detail-row"><div class="detail-key">Requested By</div><div class="detail-val">${slot.requested_by_name}</div></div>
+    <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val">${slot.description || '-'}</div></div>
+  `;
+  showPage('approve-slot');
+}
+
+async function approveSlot() {
+  if (!currentSlotId) return;
+  if (!confirm('Are you sure you want to approve this slot?')) return;
+  try {
+    await API.post(`/api/slots/${currentSlotId}/approve/`, {
+      comment: document.getElementById('approve-comment').value || '',
+    });
+  } catch (e) {
+    DEMO.approveSlot(currentSlotId);
+  }
+  loadDashboard();
+  loadApprovals();
+  showPage('approvals');
+}
+
+async function openReject(id) {
+  currentSlotId = id;
+  let slot;
+  try {
+    slot = await API.get(`/api/slots/${id}/`);
+  } catch (e) { slot = getSlotById(id); }
+  document.getElementById('reject-slot-details').innerHTML = `
+    <div class="detail-row"><div class="detail-key">Title</div><div class="detail-val">${slot.title}</div></div>
+    <div class="detail-row"><div class="detail-key">Team</div><div class="detail-val">${slot.team_name}</div></div>
+    <div class="detail-row"><div class="detail-key">Date</div><div class="detail-val">${slot.date}</div></div>
+    <div class="detail-row"><div class="detail-key">Time</div><div class="detail-val">${toAmPm(slot.start_time)} – ${toAmPm(slot.end_time)}</div></div>
+  `;
+  showPage('reject-slot');
+}
+
+async function rejectSlot() {
+  if (!currentSlotId) return;
+  if (!confirm('Are you sure you want to reject this slot?')) return;
+  const reason = document.getElementById('reject-reason').value || 'No reason provided.';
+  try {
+    await API.post(`/api/slots/${currentSlotId}/reject/`, { reason });
+  } catch (e) {
+    DEMO.rejectSlot(currentSlotId, reason);
+  }
+  loadDashboard();
+  loadApprovals();
+  showPage('approvals');
+}
+
+// ── CALENDAR ────────────────────────────────────────────
+let calDate = new Date();
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  document.getElementById('cal-month-label').textContent = MONTHS[month] + ' ' + year;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+  var eventMap = {};
+  DEMO.getSlots().forEach(function(e) {
+    var d = e.date;
+    if (!eventMap[d]) eventMap[d] = [];
+    eventMap[d].push(e);
+  });
+  renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap);
+
+  API.get('/api/slots/calendar/?month=' + (month + 1) + '&year=' + year).then(function(events) {
+    var apiMap = {};
+    events.forEach(function(e) { var d = e.date; if (!apiMap[d]) apiMap[d] = []; apiMap[d].push(e); });
+    renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, apiMap);
+  }).catch(function() {});
+}
+
+function renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap) {
+  let html = '';
+  let day = 1;
+  let nextDay = 1;
+  const rows = Math.ceil((startOffset + daysInMonth) / 7);
+
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < 7; c++) {
+      const idx = r * 7 + c;
+      if (idx < startOffset) {
+        const pd = prevMonthDays - startOffset + idx + 1;
+        html += `<td><div class="cal-day-num cal-other-month">${pd}</div></td>`;
+      } else if (day <= daysInMonth) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        let eventsHtml = '';
+        if (eventMap[dateStr]) {
+          eventsHtml = eventMap[dateStr].map(e =>
+            `<div class="cal-event ${e.status}" onclick="showSlotDetail(${e.id},'${e.status}')">${e.title}</div>`
+          ).join('');
+        }
+        html += `<td><div class="cal-day-num ${isToday ? 'today' : ''}">${day}</div>${eventsHtml}</td>`;
+        day++;
+      } else {
+        html += `<td><div class="cal-day-num cal-other-month">${nextDay}</div></td>`;
+        nextDay++;
+      }
+    }
+    html += '</tr>';
+  }
+  document.getElementById('cal-body').innerHTML = html;
+}
+
+function changeMonth(delta) {
+  calDate.setMonth(calDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function goToday() {
+  calDate = new Date();
+  renderCalendar();
+}
+
+// ── REPORTS ─────────────────────────────────────────────
+async function loadReports() {
+  let stats, slots;
+  try {
+    stats = await API.get('/api/slots/stats/');
+  } catch (e) { stats = DEMO.getStats(); }
+  const total = stats.total || 1;
+  document.getElementById('rpt-total').textContent = stats.total || 0;
+  document.getElementById('rpt-approved').textContent = stats.approved || 0;
+  document.getElementById('rpt-rejected').textContent = stats.rejected || 0;
+  document.getElementById('rpt-pending').textContent = stats.pending || 0;
+  document.getElementById('rpt-approved-pct').textContent = Math.round((stats.approved || 0) / total * 100) + '%';
+  document.getElementById('rpt-rejected-pct').textContent = Math.round((stats.rejected || 0) / total * 100) + '%';
+  document.getElementById('rpt-pending-pct').textContent = Math.round((stats.pending || 0) / total * 100) + '%';
+
+  try {
+    slots = await API.get('/api/slots/');
+  } catch (e) { slots = DEMO.getSlots(); }
+
+  const deptCount = {};
+  const deptStatus = {};
+  slots.forEach(s => {
+    const team = s.team_name || 'Other';
+    if (!deptCount[team]) { deptCount[team] = 0; deptStatus[team] = { approved: 0, rejected: 0, pending: 0 }; }
+    deptCount[team]++;
+    if (deptStatus[team][s.status] !== undefined) deptStatus[team][s.status]++;
+  });
+
+  const colors = ['#4F7FFF', '#16A34A', '#D97706', '#DC2626'];
+  const totalSlots = slots.length || 1;
+  let legendHtml = '';
+  let tableHtml = '';
+  let i = 0;
+  for (const team in deptCount) {
+    const pct = Math.round(deptCount[team] / totalSlots * 100);
+    const color = colors[i % colors.length];
+    const st = deptStatus[team];
+    const rate = deptCount[team] > 0 ? Math.round((st.approved || 0) / deptCount[team] * 100) : 0;
+    const rateColor = rate >= 70 ? 'var(--green)' : rate >= 40 ? 'var(--amber)' : 'var(--red)';
+    legendHtml += `<div class="pie-legend-item"><div class="pie-dot" style="background:${color};"></div><div class="pie-name">${team}</div><div class="pie-val">${pct}%</div></div>`;
+    tableHtml += `<tr><td><span class="tag">${team}</span></td><td>${deptCount[team]}</td><td style="color:var(--green);font-weight:600;">${st.approved || 0}</td><td style="color:var(--red);font-weight:600;">${st.rejected || 0}</td><td style="color:var(--amber);font-weight:600;">${st.pending || 0}</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:6px;background:#E2E8F4;border-radius:3px;"><div style="width:${rate}%;height:100%;background:${rateColor};border-radius:3px;"></div></div><span style="font-size:12px;font-weight:600;color:${rateColor};">${rate}%</span></div></td></tr>`;
+    i++;
+  }
+  document.getElementById('dept-breakdown').innerHTML = `<div class="pie-legend">${legendHtml}</div>`;
+  document.getElementById('team-breakdown-body').innerHTML = tableHtml;
+}
+
+// ── USERS ───────────────────────────────────────────────
+async function loadUsers() {
+  const tbody = document.getElementById('users-table-body');
+  let users;
+  try {
+    users = await API.get('/api/auth/');
+  } catch (e) { users = DEMO.users; }
+  const colors = ['linear-gradient(135deg,#4F7FFF,#7C3AED)','linear-gradient(135deg,#16A34A,#15803D)','linear-gradient(135deg,#D97706,#B45309)','linear-gradient(135deg,#7C3AED,#6D28D9)','linear-gradient(135deg,#EC4899,#BE185D)'];
+  tbody.innerHTML = users.map((u, i) => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="user-avatar" style="width:32px;height:32px;font-size:11px;background:${colors[i % colors.length]};">${(u.full_name || u.username).split(' ').map(s => s[0]).join('').toUpperCase().slice(0, 2)}</div>${u.full_name || u.username}</div></td>
+      <td>${u.email}</td>
+      <td><span class="tag">${u.team || '—'}</span></td>
+      <td>${u.role}</td>
+      <td><span class="chip ${u.is_active ? 'approved' : 'pending'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── INIT ────────────────────────────────────────────────
+// Set default date/time
+const today = new Date();
+document.getElementById('slot-date').value = today.toISOString().split('T')[0];
+document.getElementById('slot-start-time').value = '09:00';
+document.getElementById('slot-end-time').value = '17:00';
+</script>
+</body>
+</html>
