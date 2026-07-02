@@ -489,7 +489,7 @@
     <div class="sidebar-footer">
       <div class="user-avatar" id="sidebar-avatar">HP</div>
       <div class="user-info">
-        <div class="user-name" id="sidebar-name">Hardik Patel</div>
+        <div class="user-name" id="sidebar-name">Hardik Chaudhary</div>
         <div class="user-role" id="sidebar-role">Admin</div>
       </div>
       <span class="logout-btn" onclick="doLogout()" title="Sign out">⏏</span>
@@ -1017,9 +1017,9 @@ async function doLogin() {
       id: 1,
       username: email.split('@')[0],
       email: email,
-      full_name: isHR ? 'HR User' : 'Hardik Patel',
+      full_name: isHR ? 'HR User' : 'Hardik Chaudhary',
       first_name: isHR ? 'HR' : 'Hardik',
-      last_name: isHR ? 'User' : 'Patel',
+      last_name: isHR ? 'User' : 'Chaudhary',
       role: isHR ? 'hr' : 'admin',
       is_active: true,
     };
@@ -1156,7 +1156,7 @@ async function loadCreateFormData() {
       { id: 4, name: 'QA Team' },
     ];
     users = [
-      { id: 1, username: 'hardik', full_name: 'Hardik Patel', role: 'admin', team: null },
+      { id: 1, username: 'hardik', full_name: 'Hardik Chaudhary', role: 'admin', team: null },
       { id: 2, username: 'rahul', full_name: 'Rahul Sharma', role: 'team_lead', team: null },
       { id: 3, username: 'amit', full_name: 'Amit Verma', role: 'developer', team: null },
       { id: 4, username: 'jay', full_name: 'Jay Mehta', role: 'developer', team: null },
@@ -1236,7 +1236,7 @@ const DEMO = {
   _nextNotifId: 1,
   slots: [],
   users: [
-    { id: 1, username: 'hardik', email: 'hardik@slotflow.com', full_name: 'Hardik Patel', role: 'admin', team: null, is_active: true },
+    { id: 1, username: 'hardik', email: 'hardik@slotflow.com', full_name: 'Hardik Chaudhary', role: 'admin', team: null, is_active: true },
     { id: 2, username: 'rahul', email: 'rahul@slotflow.com', full_name: 'Rahul Sharma', role: 'team_lead', team: null, is_active: true },
     { id: 3, username: 'amit', email: 'amit@slotflow.com', full_name: 'Amit Verma', role: 'developer', team: null, is_active: true },
     { id: 4, username: 'jay', email: 'jay@slotflow.com', full_name: 'Jay Mehta', role: 'developer', team: null, is_active: true },

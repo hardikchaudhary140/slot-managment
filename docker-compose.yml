@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: slotflow_db
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: slotflow_user
+      MYSQL_PASSWORD: slotflow_pass
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG: "True"
+      DB_ENGINE: django.db.backends.mysql
+      DB_NAME: slotflow_db
+      DB_USER: slotflow_user
+      DB_PASSWORD: slotflow_pass
+      DB_HOST: db
+      DB_PORT: "3306"
+      DJANGO_SECRET_KEY: django-insecure-docker-dev-key-change-in-production
+      DJANGO_ALLOWED_HOSTS: "*"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+volumes:
+  mysql_data:

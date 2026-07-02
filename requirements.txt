@@ -1,4 +1,4 @@
 Django>=5.0
 djangorestframework>=3.14
-mysqlclient>=2.2
+PyMySQL>=1.1
 django-cors-headers>=4.0
