@@ -26,16 +26,35 @@ for t_data in teams_data:
     teams[t_data['name']] = team
     print(f"Team: {team.name}")
 
-# Create users
+# Create users - 4 Team Leads with their Developers
 users_data = [
-    {'username': 'hardik', 'email': 'hardik@slotflow.com', 'first_name': 'Hardik', 'last_name': 'Patel', 'role': 'admin', 'team': 'Design Team'},
-    {'username': 'rahul', 'email': 'rahul@slotflow.com', 'first_name': 'Rahul', 'last_name': 'Sharma', 'role': 'team_lead', 'team': 'Design Team'},
-    {'username': 'amit', 'email': 'amit@slotflow.com', 'first_name': 'Amit', 'last_name': 'Verma', 'role': 'developer', 'team': 'Embroidery Team'},
-    {'username': 'jay', 'email': 'jay@slotflow.com', 'first_name': 'Jay', 'last_name': 'Mehta', 'role': 'developer', 'team': 'Development Team'},
-    {'username': 'pooja', 'email': 'pooja@slotflow.com', 'first_name': 'Pooja', 'last_name': 'Singh', 'role': 'team_lead', 'team': 'QA Team'},
-    {'username': 'hruser', 'email': 'hr@slotflow.com', 'first_name': 'HR', 'last_name': 'User', 'role': 'hr', 'team': None},
-    {'username': 'ravi', 'email': 'ravi@slotflow.com', 'first_name': 'Ravi', 'last_name': 'Kumar', 'role': 'developer', 'team': 'Development Team'},
+    # Admin & HR
     {'username': 'admin', 'email': 'admin@slotflow.com', 'first_name': 'Admin', 'last_name': 'User', 'role': 'admin', 'team': None},
+    {'username': 'hruser', 'email': 'hr@slotflow.com', 'first_name': 'HR', 'last_name': 'User', 'role': 'hr', 'team': None},
+
+    # Hardik (Team Lead - Design Team)
+    {'username': 'hardik', 'email': 'hardik@slotflow.com', 'first_name': 'Hardik', 'last_name': 'Patel', 'role': 'team_lead', 'team': 'Design Team'},
+    {'username': 'rahul', 'email': 'rahul@slotflow.com', 'first_name': 'Rahul', 'last_name': 'Sharma', 'role': 'developer', 'team': 'Design Team'},
+    {'username': 'priya', 'email': 'priya@slotflow.com', 'first_name': 'Priya', 'last_name': 'Joshi', 'role': 'developer', 'team': 'Design Team'},
+    {'username': 'kartik', 'email': 'kartik@slotflow.com', 'first_name': 'Kartik', 'last_name': 'Reddy', 'role': 'developer', 'team': 'Design Team'},
+
+    # Amit (Team Lead - Development Team)
+    {'username': 'amit', 'email': 'amit@slotflow.com', 'first_name': 'Amit', 'last_name': 'Verma', 'role': 'team_lead', 'team': 'Development Team'},
+    {'username': 'jay', 'email': 'jay@slotflow.com', 'first_name': 'Jay', 'last_name': 'Mehta', 'role': 'developer', 'team': 'Development Team'},
+    {'username': 'ravi', 'email': 'ravi@slotflow.com', 'first_name': 'Ravi', 'last_name': 'Kumar', 'role': 'developer', 'team': 'Development Team'},
+    {'username': 'neha', 'email': 'neha@slotflow.com', 'first_name': 'Neha', 'last_name': 'Gupta', 'role': 'developer', 'team': 'Development Team'},
+
+    # Parth (Team Lead - Embroidery Team)
+    {'username': 'parth', 'email': 'parth@slotflow.com', 'first_name': 'Parth', 'last_name': 'Mehta', 'role': 'team_lead', 'team': 'Embroidery Team'},
+    {'username': 'sneha', 'email': 'sneha@slotflow.com', 'first_name': 'Sneha', 'last_name': 'Patil', 'role': 'developer', 'team': 'Embroidery Team'},
+    {'username': 'karan', 'email': 'karan@slotflow.com', 'first_name': 'Karan', 'last_name': 'Singh', 'role': 'developer', 'team': 'Embroidery Team'},
+    {'username': 'deepa', 'email': 'deepa@slotflow.com', 'first_name': 'Deepa', 'last_name': 'Nair', 'role': 'developer', 'team': 'Embroidery Team'},
+
+    # Niket (Team Lead - QA Team)
+    {'username': 'niket', 'email': 'niket@slotflow.com', 'first_name': 'Niket', 'last_name': 'Shah', 'role': 'team_lead', 'team': 'QA Team'},
+    {'username': 'pooja', 'email': 'pooja@slotflow.com', 'first_name': 'Pooja', 'last_name': 'Singh', 'role': 'developer', 'team': 'QA Team'},
+    {'username': 'ankit', 'email': 'ankit@slotflow.com', 'first_name': 'Ankit', 'last_name': 'Desai', 'role': 'developer', 'team': 'QA Team'},
+    {'username': 'meera', 'email': 'meera@slotflow.com', 'first_name': 'Meera', 'last_name': 'Rao', 'role': 'developer', 'team': 'QA Team'},
 ]
 
 users = {}
@@ -55,16 +74,25 @@ for u_data in users_data:
         user.set_password('password123')
         user.save()
     users[u_data['username']] = user
-    print(f"User: {user.get_full_name()} ({user.role})")
+    print(f"User: {user.get_full_name()} ({user.role}) - {u_data['team'] or 'No Team'}")
 
 # Create sample slots
 today = date.today()
 slots_data = [
-    {'title': 'Design Review Meeting', 'description': 'Discuss new design requirements and feedback.', 'category': 'design', 'team': 'Design Team', 'team_lead': 'rahul', 'developers': ['hardik', 'amit', 'jay'], 'date': today + timedelta(days=3), 'start_time': time(13, 0), 'end_time': time(15, 0), 'requested_by': 'hardik', 'status': 'pending'},
-    {'title': 'Embroidery Review', 'description': 'Review embroidery samples and approve designs.', 'category': 'embroidery', 'team': 'Embroidery Team', 'team_lead': 'rahul', 'developers': ['amit', 'jay'], 'date': today + timedelta(days=1), 'start_time': time(11, 30), 'end_time': time(13, 0), 'requested_by': 'amit', 'status': 'approved', 'approved_by': 'hruser'},
-    {'title': 'Development Review', 'description': 'Development review and planning.', 'category': 'development', 'team': 'Development Team', 'team_lead': 'amit', 'developers': ['pooja', 'ravi'], 'date': today, 'start_time': time(14, 0), 'end_time': time(16, 0), 'requested_by': 'jay', 'status': 'rejected', 'rejection_reason': 'Time slot already booked for another meeting.', 'approved_by': 'hruser'},
-    {'title': 'QA Sync', 'description': 'QA sync and testing updates.', 'category': 'qa', 'team': 'QA Team', 'team_lead': 'pooja', 'developers': ['hardik', 'jay'], 'date': today - timedelta(days=1), 'start_time': time(10, 0), 'end_time': time(11, 30), 'requested_by': 'pooja', 'status': 'approved', 'approved_by': 'hruser'},
-    {'title': 'Sprint Planning', 'description': 'Sprint planning for next release.', 'category': 'development', 'team': 'Development Team', 'team_lead': 'amit', 'developers': ['ravi', 'jay'], 'date': today - timedelta(days=2), 'start_time': time(9, 0), 'end_time': time(10, 30), 'requested_by': 'ravi', 'status': 'approved', 'approved_by': 'hruser'},
+    # Hardik's team slots
+    {'title': 'Design Review Meeting', 'description': 'Review new UI mockups for the mobile app redesign.', 'category': 'design', 'team': 'Design Team', 'team_lead': 'hardik', 'developers': ['rahul', 'priya', 'kartik'], 'date': today + timedelta(days=3), 'start_time': time(13, 0), 'end_time': time(15, 0), 'requested_by': 'hardik', 'status': 'pending'},
+
+    # Amit's team slots
+    {'title': 'Sprint Planning', 'description': 'Sprint planning for the upcoming release cycle.', 'category': 'development', 'team': 'Development Team', 'team_lead': 'amit', 'developers': ['jay', 'ravi', 'neha'], 'date': today, 'start_time': time(10, 0), 'end_time': time(12, 0), 'requested_by': 'amit', 'status': 'approved', 'approved_by': 'hruser'},
+    {'title': 'Code Review Session', 'description': 'Review pull requests and discuss coding standards.', 'category': 'development', 'team': 'Development Team', 'team_lead': 'amit', 'developers': ['jay', 'neha'], 'date': today + timedelta(days=2), 'start_time': time(14, 0), 'end_time': time(16, 0), 'requested_by': 'ravi', 'status': 'pending'},
+
+    # Parth's team slots
+    {'title': 'Embroidery Design Review', 'description': 'Review and approve new embroidery patterns for the collection.', 'category': 'embroidery', 'team': 'Embroidery Team', 'team_lead': 'parth', 'developers': ['sneha', 'karan', 'deepa'], 'date': today + timedelta(days=1), 'start_time': time(11, 0), 'end_time': time(13, 0), 'requested_by': 'parth', 'status': 'approved', 'approved_by': 'hruser'},
+    {'title': 'Stitching Quality Check', 'description': 'Quality inspection of completed embroidery samples.', 'category': 'embroidery', 'team': 'Embroidery Team', 'team_lead': 'parth', 'developers': ['sneha', 'deepa'], 'date': today - timedelta(days=1), 'start_time': time(9, 0), 'end_time': time(11, 0), 'requested_by': 'karan', 'status': 'rejected', 'rejection_reason': 'Schedule conflict with another team meeting.'},
+
+    # Niket's team slots
+    {'title': 'QA Test Planning', 'description': 'Plan test cases for the new feature release.', 'category': 'qa', 'team': 'QA Team', 'team_lead': 'niket', 'developers': ['pooja', 'ankit', 'meera'], 'date': today + timedelta(days=4), 'start_time': time(15, 0), 'end_time': time(17, 0), 'requested_by': 'niket', 'status': 'pending'},
+    {'title': 'Bug Triage Meeting', 'description': 'Prioritize and assign reported bugs for the sprint.', 'category': 'qa', 'team': 'QA Team', 'team_lead': 'niket', 'developers': ['pooja', 'ankit'], 'date': today + timedelta(days=1), 'start_time': time(16, 0), 'end_time': time(17, 30), 'requested_by': 'meera', 'status': 'pending'},
 ]
 
 for s_data in slots_data:
@@ -111,7 +139,28 @@ for s_data in slots_data:
             }
         )
 
-print("\nSeed data created successfully!")
-print("\nDemo accounts:")
-print("  admin@slotflow.com / password123  -> Admin")
-print("  hr@slotflow.com / password123     -> HR")
+print("\n" + "=" * 60)
+print("Seed data created successfully!")
+print("=" * 60)
+print("\nDemo accounts (password: password123):")
+print("-" * 60)
+print(f"  {'Email':<28} {'Role':<12} {'Team'}")
+print("-" * 60)
+print(f"  {'admin@slotflow.com':<28} {'Admin':<12} All Teams")
+print(f"  {'hr@slotflow.com':<28} {'HR':<12} All Teams")
+print(f"  {'hardik@slotflow.com':<28} {'Team Lead':<12} Design Team")
+print(f"  {'rahul@slotflow.com':<28} {'Developer':<12} Design Team")
+print(f"  {'priya@slotflow.com':<28} {'Developer':<12} Design Team")
+print(f"  {'kartik@slotflow.com':<28} {'Developer':<12} Design Team")
+print(f"  {'amit@slotflow.com':<28} {'Team Lead':<12} Development Team")
+print(f"  {'jay@slotflow.com':<28} {'Developer':<12} Development Team")
+print(f"  {'ravi@slotflow.com':<28} {'Developer':<12} Development Team")
+print(f"  {'neha@slotflow.com':<28} {'Developer':<12} Development Team")
+print(f"  {'parth@slotflow.com':<28} {'Team Lead':<12} Embroidery Team")
+print(f"  {'sneha@slotflow.com':<28} {'Developer':<12} Embroidery Team")
+print(f"  {'karan@slotflow.com':<28} {'Developer':<12} Embroidery Team")
+print(f"  {'deepa@slotflow.com':<28} {'Developer':<12} Embroidery Team")
+print(f"  {'niket@slotflow.com':<28} {'Team Lead':<12} QA Team")
+print(f"  {'pooja@slotflow.com':<28} {'Developer':<12} QA Team")
+print(f"  {'ankit@slotflow.com':<28} {'Developer':<12} QA Team")
+print(f"  {'meera@slotflow.com':<28} {'Developer':<12} QA Team")
