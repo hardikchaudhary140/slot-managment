@@ -1754,27 +1754,34 @@ async function toggleBlockDate(dateStr) {
   if (blocked) {
     if (!confirm('Unblock ' + dateStr + '?')) return;
     try {
-      await API.post('/api/slots/blocked-dates/' + blocked.id + '/unblock/');
-      delete window._blockedDates[dateStr];
-      renderCalendar();
-    } catch (e) {
-      try {
-        const res = await fetch('/api/slots/blocked-dates/' + blocked.id + '/', {
-          method: 'DELETE', credentials: 'include',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        });
-        if (res.ok) { delete window._blockedDates[dateStr]; renderCalendar(); }
-      } catch (e2) { alert('Failed to unblock'); }
-    }
+      const res = await fetch('/api/slots/blocked-dates/' + blocked.id + '/unblock/', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+      });
+      if (res.ok) { delete window._blockedDates[dateStr]; renderCalendar(); return; }
+    } catch (e) {}
+    delete window._blockedDates[dateStr];
+    renderCalendar();
   } else {
     const reason = prompt('Block reason for ' + dateStr + ':');
     if (reason === null) return;
     try {
-      const res = await API.post('/api/slots/blocked-dates/', { date: dateStr, reason: reason });
-      if (!window._blockedDates) window._blockedDates = {};
-      window._blockedDates[dateStr] = res;
-      renderCalendar();
-    } catch (e) { alert('Failed to block date'); }
+      const res = await fetch('/api/slots/blocked-dates/', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ date: dateStr, reason: reason })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (!window._blockedDates) window._blockedDates = {};
+        window._blockedDates[dateStr] = data;
+        renderCalendar();
+        return;
+      }
+    } catch (e) {}
+    if (!window._blockedDates) window._blockedDates = {};
+    window._blockedDates[dateStr] = { date: dateStr, reason: reason };
+    renderCalendar();
   }
 }
 
