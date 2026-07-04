@@ -33,7 +33,7 @@ users_data = [
     {'username': 'hruser', 'email': 'hr@slotflow.com', 'first_name': 'HR', 'last_name': 'User', 'role': 'hr', 'team': None},
 
     # Hardik (Team Lead - Design Team)
-    {'username': 'hardik', 'email': 'hardik@slotflow.com', 'first_name': 'Hardik', 'last_name': 'Patel', 'role': 'team_lead', 'team': 'Design Team'},
+    {'username': 'hardik', 'email': 'hardik@slotflow.com', 'first_name': 'Hardik', 'last_name': 'Chaudhary', 'role': 'team_lead', 'team': 'Design Team'},
     {'username': 'rahul', 'email': 'rahul@slotflow.com', 'first_name': 'Rahul', 'last_name': 'Sharma', 'role': 'developer', 'team': 'Design Team'},
     {'username': 'priya', 'email': 'priya@slotflow.com', 'first_name': 'Priya', 'last_name': 'Joshi', 'role': 'developer', 'team': 'Design Team'},
     {'username': 'kartik', 'email': 'kartik@slotflow.com', 'first_name': 'Kartik', 'last_name': 'Reddy', 'role': 'developer', 'team': 'Design Team'},
@@ -51,7 +51,7 @@ users_data = [
     {'username': 'deepa', 'email': 'deepa@slotflow.com', 'first_name': 'Deepa', 'last_name': 'Nair', 'role': 'developer', 'team': 'Embroidery Team'},
 
     # Niket (Team Lead - QA Team)
-    {'username': 'niket', 'email': 'niket@slotflow.com', 'first_name': 'Niket', 'last_name': 'Shah', 'role': 'team_lead', 'team': 'QA Team'},
+    {'username': 'niket', 'email': 'niket@slotflow.com', 'first_name': 'Niket', 'last_name': 'Kapdiya', 'role': 'team_lead', 'team': 'QA Team'},
     {'username': 'pooja', 'email': 'pooja@slotflow.com', 'first_name': 'Pooja', 'last_name': 'Singh', 'role': 'developer', 'team': 'QA Team'},
     {'username': 'ankit', 'email': 'ankit@slotflow.com', 'first_name': 'Ankit', 'last_name': 'Desai', 'role': 'developer', 'team': 'QA Team'},
     {'username': 'meera', 'email': 'meera@slotflow.com', 'first_name': 'Meera', 'last_name': 'Rao', 'role': 'developer', 'team': 'QA Team'},

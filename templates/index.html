@@ -1012,15 +1012,16 @@ async function doLogin() {
     afterLogin(data);
   } catch (e) {
     // For demo: accept any password
-    const isHR = email.includes('hr');
+    const matchUser = DEMO.users.find(u => u.username === email.split('@')[0]) || {};
     currentUser = {
-      id: 1,
+      id: matchUser.id || 1,
       username: email.split('@')[0],
       email: email,
-      full_name: isHR ? 'HR User' : 'Hardik Chaudhary',
-      first_name: isHR ? 'HR' : 'Hardik',
-      last_name: isHR ? 'User' : 'Chaudhary',
-      role: isHR ? 'hr' : 'admin',
+      full_name: matchUser.full_name || email.split('@')[0],
+      first_name: matchUser.first_name || email.split('@')[0],
+      last_name: matchUser.last_name || '',
+      role: matchUser.role || 'developer',
+      team: matchUser.team || null,
       is_active: true,
     };
     afterLogin(currentUser);
@@ -1136,6 +1137,7 @@ function wizardStep(n) {
 }
 
 async function loadCreateFormData() {
+  const teamSel = document.getElementById('slot-team');
   const leadSel = document.getElementById('slot-team-lead');
   const devsContainer = document.getElementById('slot-developers');
   leadSel.innerHTML = '<option value="">Loading...</option>';
@@ -1155,20 +1157,15 @@ async function loadCreateFormData() {
       { id: 3, name: 'Embroidery Team' },
       { id: 4, name: 'QA Team' },
     ];
-    users = [
-      { id: 1, username: 'hardik', full_name: 'Hardik Chaudhary', role: 'admin', team: null },
-      { id: 2, username: 'rahul', full_name: 'Rahul Sharma', role: 'team_lead', team: null },
-      { id: 3, username: 'amit', full_name: 'Amit Verma', role: 'developer', team: null },
-      { id: 4, username: 'jay', full_name: 'Jay Mehta', role: 'developer', team: null },
-      { id: 5, username: 'pooja', full_name: 'Pooja Singh', role: 'team_lead', team: null },
-      { id: 6, username: 'ravi', full_name: 'Ravi Kumar', role: 'developer', team: null },
-    ];
+    users = DEMO.users;
   }
 
   if (!teams || !teams.length) teams = [{ id: 1, name: 'Default Team' }];
   if (!users || !users.length) users = [];
 
-  const teamSel = document.getElementById('slot-team');
+  window._createFormTeams = teams;
+  window._createFormUsers = users;
+
   teamSel.innerHTML = '';
   teams.forEach(t => {
     const opt = document.createElement('option');
@@ -1177,24 +1174,62 @@ async function loadCreateFormData() {
     teamSel.appendChild(opt);
   });
 
+  populateLeadsByTeam();
+  populateDevsByLead();
+
+  teamSel.onchange = () => { populateLeadsByTeam(); populateDevsByLead(); };
+  leadSel.onchange = () => { populateDevsByLead(); };
+}
+
+function populateLeadsByTeam() {
+  const teamSel = document.getElementById('slot-team');
+  const leadSel = document.getElementById('slot-team-lead');
+  const users = window._createFormUsers || [];
+  const teams = window._createFormTeams || [];
+  const selectedTeamId = parseInt(teamSel.value);
+  const selectedTeam = teams.find(t => t.id === selectedTeamId);
+
   leadSel.innerHTML = '';
-  const leads = users.filter(u => u.role === 'team_lead' || u.role === 'admin');
+  const leads = users.filter(u => {
+    if (u.role !== 'team_lead') return false;
+    if (!selectedTeam) return true;
+    const userTeamId = typeof u.team === 'number' ? u.team : (teams.find(t => t.name === u.team)?.id);
+    return userTeamId === selectedTeamId;
+  });
+
   if (!leads.length) {
-    leadSel.innerHTML = '<option value="">No team leads available</option>';
+    leadSel.innerHTML = '<option value="">No team lead</option>';
   } else {
     leads.forEach(u => {
       const opt = document.createElement('option');
       opt.value = u.id;
-      opt.textContent = u.full_name;
+      opt.textContent = u.full_name || u.username;
       leadSel.appendChild(opt);
     });
   }
+}
+
+function populateDevsByLead() {
+  const leadSel = document.getElementById('slot-team-lead');
+  const devsContainer = document.getElementById('slot-developers');
+  const users = window._createFormUsers || [];
+  const teams = window._createFormTeams || [];
+  const selectedLeadId = parseInt(leadSel.value);
+  const lead = users.find(u => u.id === selectedLeadId);
 
   devsContainer.innerHTML = '';
-  if (!users.length) {
-    devsContainer.innerHTML = '<div style="color:var(--muted);font-size:13px;">No users available</div>';
+  const devs = users.filter(u => {
+    if (u.role !== 'developer') return false;
+    if (!lead) return true;
+    const userTeamId = typeof u.team === 'number' ? u.team : (teams.find(t => t.name === u.team)?.id);
+    const leadTeamId = typeof lead.team === 'number' ? lead.team : (teams.find(t => t.name === lead.team)?.id);
+    return userTeamId === leadTeamId;
+  });
+
+  if (!devs.length) {
+    devsContainer.innerHTML = '<div style="color:var(--muted);font-size:13px;">No developers</div>';
   } else {
-    users.forEach(u => {
+    devs.forEach(u => {
       const label = document.createElement('label');
       label.className = 'checkbox-item';
       const cb = document.createElement('input');
@@ -1238,7 +1273,7 @@ const DEMO = {
   users: [
     { id: 1, username: 'admin', email: 'admin@slotflow.com', full_name: 'Admin User', role: 'admin', team: null, is_active: true },
     { id: 2, username: 'hruser', email: 'hr@slotflow.com', full_name: 'HR User', role: 'hr', team: null, is_active: true },
-    { id: 3, username: 'hardik', email: 'hardik@slotflow.com', full_name: 'Hardik Patel', role: 'team_lead', team: 'Design Team', is_active: true },
+    { id: 3, username: 'hardik', email: 'hardik@slotflow.com', full_name: 'Hardik Chaudhary', role: 'team_lead', team: 'Design Team', is_active: true },
     { id: 4, username: 'rahul', email: 'rahul@slotflow.com', full_name: 'Rahul Sharma', role: 'developer', team: 'Design Team', is_active: true },
     { id: 5, username: 'priya', email: 'priya@slotflow.com', full_name: 'Priya Joshi', role: 'developer', team: 'Design Team', is_active: true },
     { id: 6, username: 'kartik', email: 'kartik@slotflow.com', full_name: 'Kartik Reddy', role: 'developer', team: 'Design Team', is_active: true },
@@ -1250,7 +1285,7 @@ const DEMO = {
     { id: 12, username: 'sneha', email: 'sneha@slotflow.com', full_name: 'Sneha Patil', role: 'developer', team: 'Embroidery Team', is_active: true },
     { id: 13, username: 'karan', email: 'karan@slotflow.com', full_name: 'Karan Singh', role: 'developer', team: 'Embroidery Team', is_active: true },
     { id: 14, username: 'deepa', email: 'deepa@slotflow.com', full_name: 'Deepa Nair', role: 'developer', team: 'Embroidery Team', is_active: true },
-    { id: 15, username: 'niket', email: 'niket@slotflow.com', full_name: 'Niket Shah', role: 'team_lead', team: 'QA Team', is_active: true },
+    { id: 15, username: 'niket', email: 'niket@slotflow.com', full_name: 'Niket Kapdiya', role: 'team_lead', team: 'QA Team', is_active: true },
     { id: 16, username: 'pooja', email: 'pooja@slotflow.com', full_name: 'Pooja Singh', role: 'developer', team: 'QA Team', is_active: true },
     { id: 17, username: 'ankit', email: 'ankit@slotflow.com', full_name: 'Ankit Desai', role: 'developer', team: 'QA Team', is_active: true },
     { id: 18, username: 'meera', email: 'meera@slotflow.com', full_name: 'Meera Rao', role: 'developer', team: 'QA Team', is_active: true },
