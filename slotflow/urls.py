@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.views.decorators.csrf import ensure_csrf_cookie
 from slots_app.views import BlockedDateViewSet
+
+index_view = ensure_csrf_cookie(TemplateView.as_view(template_name='index.html'))
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -12,5 +15,5 @@ urlpatterns = [
     path('api/slots/blocked-dates/', BlockedDateViewSet.as_view({'get': 'list', 'post': 'create'}), name='blocked-date-list'),
     path('api/slots/', include('slots_app.urls')),
     path('api/notifications/', include('notifications.urls')),
-    path('', TemplateView.as_view(template_name='index.html'), name='index'),
+    path('', index_view, name='index'),
 ]
