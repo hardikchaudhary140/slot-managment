@@ -347,8 +347,10 @@
   .cal-grid { width: 100%; border-collapse: collapse; }
   .cal-grid th { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 8px 4px; text-align: center; }
   .cal-grid td { vertical-align: top; border: 1px solid var(--border); padding: 6px; min-height: 80px; width: 14.28%; font-size: 12px; }
-  .cal-day-num { font-weight: 600; color: var(--navy); margin-bottom: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .cal-day-num { font-weight: 600; color: var(--navy); margin-bottom: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: default; }
   .cal-day-num.today { background: var(--accent); color: #fff; }
+  .cal-day-num.cal-day-blocked { color: #DC2626; cursor: pointer; }
+  .cal-blocked-badge { font-size: 10px; line-height: 1; margin-left: 2px; }
   .cal-other-month { color: #D1D5DB; }
   .cal-event { font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
   .cal-event.approved { background: #BBF7D0; color: #166534; }
@@ -1690,20 +1692,29 @@ function renderCalendar() {
     if (!eventMap[d]) eventMap[d] = [];
     eventMap[d].push(e);
   });
-  renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap);
+  renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap, {});
 
   API.get('/api/slots/calendar/?month=' + (month + 1) + '&year=' + year).then(function(events) {
     var apiMap = {};
     events.forEach(function(e) { var d = e.date; if (!apiMap[d]) apiMap[d] = []; apiMap[d].push(e); });
-    renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, apiMap);
+    renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, apiMap, window._blockedDates || {});
   }).catch(function() {});
+
+  API.get('/api/slots/blocked-dates/').then(function(res) {
+    var results = res.results || res;
+    var bMap = {};
+    results.forEach(function(b) { bMap[b.date] = b; });
+    window._blockedDates = bMap;
+    renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap, bMap);
+  }).catch(function() { window._blockedDates = {}; });
 }
 
-function renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap) {
+function renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, todayStr, eventMap, blockedMap) {
   let html = '';
   let day = 1;
   let nextDay = 1;
   const rows = Math.ceil((startOffset + daysInMonth) / 7);
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'hr');
 
   for (let r = 0; r < rows; r++) {
     html += '<tr>';
@@ -1715,13 +1726,17 @@ function renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, tod
       } else if (day <= daysInMonth) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const isToday = dateStr === todayStr;
+        const isBlocked = blockedMap[dateStr];
         let eventsHtml = '';
         if (eventMap[dateStr]) {
           eventsHtml = eventMap[dateStr].map(e =>
             `<div class="cal-event ${e.status}" onclick="showSlotDetail(${e.id},'${e.status}')">${e.title}</div>`
           ).join('');
         }
-        html += `<td><div class="cal-day-num ${isToday ? 'today' : ''}">${day}</div>${eventsHtml}</td>`;
+        const blockedClass = isBlocked ? ' cal-day-blocked' : '';
+        const blockedBadge = isBlocked ? `<div class="cal-blocked-badge" title="${isBlocked.reason || 'Blocked'}">🚫</div>` : '';
+        const clickAttr = isAdmin ? ` onclick="toggleBlockDate('${dateStr}')"` : '';
+        html += `<td${isBlocked ? ' style="background:#FEE2E2;"' : ''}><div class="cal-day-num${isToday ? ' today' : ''}${blockedClass}"${clickAttr}>${day}${blockedBadge}</div>${eventsHtml}</td>`;
         day++;
       } else {
         html += `<td><div class="cal-day-num cal-other-month">${nextDay}</div></td>`;
@@ -1731,6 +1746,36 @@ function renderCalGrid(year, month, daysInMonth, prevMonthDays, startOffset, tod
     html += '</tr>';
   }
   document.getElementById('cal-body').innerHTML = html;
+}
+
+async function toggleBlockDate(dateStr) {
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'hr')) return;
+  const blocked = window._blockedDates && window._blockedDates[dateStr];
+  if (blocked) {
+    if (!confirm('Unblock ' + dateStr + '?')) return;
+    try {
+      await API.post('/api/slots/blocked-dates/' + blocked.id + '/unblock/');
+      delete window._blockedDates[dateStr];
+      renderCalendar();
+    } catch (e) {
+      try {
+        const res = await fetch('/api/slots/blocked-dates/' + blocked.id + '/', {
+          method: 'DELETE', credentials: 'include',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        });
+        if (res.ok) { delete window._blockedDates[dateStr]; renderCalendar(); }
+      } catch (e2) { alert('Failed to unblock'); }
+    }
+  } else {
+    const reason = prompt('Block reason for ' + dateStr + ':');
+    if (reason === null) return;
+    try {
+      const res = await API.post('/api/slots/blocked-dates/', { date: dateStr, reason: reason });
+      if (!window._blockedDates) window._blockedDates = {};
+      window._blockedDates[dateStr] = res;
+      renderCalendar();
+    } catch (e) { alert('Failed to block date'); }
+  }
 }
 
 function changeMonth(delta) {

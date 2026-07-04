@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Team, Slot
+from .models import Team, Slot, BlockedDate
 from accounts.serializers import UserSerializer
 
 User = get_user_model()
@@ -53,6 +53,8 @@ class SlotCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['end_time'] <= data['start_time']:
             raise serializers.ValidationError({'end_time': 'End time must be after start time'})
+        if BlockedDate.objects.filter(date=data['date']).exists():
+            raise serializers.ValidationError({'date': 'This date is blocked and cannot be booked'})
         return data
 
     def create(self, validated_data):
@@ -65,3 +67,16 @@ class SlotCreateSerializer(serializers.ModelSerializer):
 class SlotActionSerializer(serializers.Serializer):
     action = serializers.ChoiceField(choices=['approve', 'reject'])
     comment = serializers.CharField(required=False, allow_blank=True)
+
+
+class BlockedDateSerializer(serializers.ModelSerializer):
+    blocked_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BlockedDate
+        fields = ['id', 'date', 'reason', 'blocked_by', 'blocked_by_name', 'created_at']
+
+    def get_blocked_by_name(self, obj):
+        if obj.blocked_by:
+            return obj.blocked_by.get_full_name() or obj.blocked_by.username
+        return None

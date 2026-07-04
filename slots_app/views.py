@@ -2,10 +2,10 @@ from django.utils import timezone
 from rest_framework import status, permissions, viewsets, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from .models import Slot, Team
+from .models import Slot, Team, BlockedDate
 from .serializers import (
     TeamSerializer, SlotListSerializer, SlotDetailSerializer,
-    SlotCreateSerializer
+    SlotCreateSerializer, BlockedDateSerializer
 )
 from notifications.models import Notification
 
@@ -151,3 +151,26 @@ def team_list(request):
     teams = Team.objects.all()
     serializer = TeamSerializer(teams, many=True)
     return Response(serializer.data)
+
+
+class BlockedDateViewSet(viewsets.ModelViewSet):
+    queryset = BlockedDate.objects.all()
+    serializer_class = BlockedDateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(blocked_by=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        date_str = request.query_params.get('date')
+        if not date_str:
+            return Response({'error': 'date param required'}, status=400)
+        is_blocked = BlockedDate.objects.filter(date=date_str).exists()
+        return Response({'date': date_str, 'is_blocked': is_blocked})
+
+    @action(detail=True, methods=['post'])
+    def unblock(self, request, pk=None):
+        bd = self.get_object()
+        bd.delete()
+        return Response({'message': 'Date unblocked'})

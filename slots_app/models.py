@@ -75,3 +75,20 @@ class Slot(models.Model):
                 num = 1
             self.request_id = f"SLT-{year}-{num:05d}"
         super().save(*args, **kwargs)
+
+
+class BlockedDate(models.Model):
+    date = models.DateField(unique=True)
+    reason = models.CharField(max_length=200, blank=True)
+    blocked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name='blocked_dates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'blocked_dates'
+        ordering = ['date']
+
+    def __str__(self):
+        return f"Blocked: {self.date}"
